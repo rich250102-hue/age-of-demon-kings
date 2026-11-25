@@ -31,7 +31,13 @@ Module TypeScript compilé en un seul fichier ES5 (`build/index.js`).
 | `bastion_placer` / `bastion_retirer` | Construction vérifiée (case, coût), remboursement de 50 % |
 | `butin_monstre` | Or d'un monstre vaincu : montant tiré par le serveur, victoires par minute plafonnées par type (`max_kills_per_minute`) |
 | `raid_lancer` | Le serveur choisit la graine, simule le raid, applique butin ou pillage ; le client rejoue la même graine pour l'afficher |
-| `gm_donner` | Game Master : don de ressources, rôle `gm` ou `admin` exigé, motif obligatoire, journalisé |
+| `evenements_actifs` | Événements en cours, affichés par le jeu |
+| `gm_moi`, `gm_joueur` | Panel GM : identité du GM, recherche d'un joueur et de son profil |
+| `gm_donner` | Don de ressources, motif obligatoire, journalisé |
+| `gm_evenements`, `gm_evenement_sauver`, `gm_evenement_supprimer` | Événements datés (bonus d'or de chasse, bonus de butin de raid), validés et journalisés |
+| `gm_journal` | Les 100 dernières actions GM |
+
+Toutes les RPC `gm_*` exigent le rôle `gm` ou `admin` dans les métadonnées du compte. Une RPC ne lève jamais d'exception vers le client : elle renvoie `{ok: false, error: code}` (et `erreur_serveur` sans trace pour un bug). Nakama impose que chaque RPC enregistrée soit une fonction déclarée au niveau global ; un test unitaire reproduit cette règle.
 
 Vérifié le 25/11/2026 sur un vrai Nakama 3.35 + PostgreSQL 16 : authentification appareil et RPC appelées en HTTP.
 
@@ -44,5 +50,5 @@ Vérifié le 25/11/2026 sur un vrai Nakama 3.35 + PostgreSQL 16 : authentificati
 
 ## Prochaines étapes techniques
 
-- Panel Game Master web (événements pilotés par les données).
+- Panel GM : sanctions (bannissement), messages à tous les joueurs, nouveaux types d'événements (Faille, invasion).
 - Test sur un vrai téléphone Android d'entrée de gamme.

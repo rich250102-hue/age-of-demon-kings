@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Age of Demon Kings · Panel Game Master</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Age of Demon Kings <span>Panel Game Master</span></h1>
+    <div id="session" hidden><span id="whoami"></span> <button id="logout" class="ghost">Se déconnecter</button></div>
+  </header>
+
+  <main>
+    <section id="login" class="card narrow">
+      <h2>Connexion</h2>
+      <form id="login-form">
+        <label>Serveur <input name="url" value="http://127.0.0.1:7350" required></label>
+        <label>Clé serveur <input name="key" value="defaultkey" required></label>
+        <label>E-mail <input name="email" type="email" autocomplete="username" required></label>
+        <label>Mot de passe <input name="password" type="password" autocomplete="current-password" minlength="8" required></label>
+        <button type="submit">Se connecter</button>
+      </form>
+      <p class="hint">Premier lancement : la connexion crée le compte. Un administrateur doit ensuite lui donner le rôle
+        <code>gm</code> ou <code>admin</code> (console Nakama, métadonnées du compte : <code>{"role": "admin"}</code>).</p>
+    </section>
+
+    <section id="app" hidden>
+      <nav>
+        <button data-tab="joueurs" class="tab active">Joueurs</button>
+        <button data-tab="evenements" class="tab">Événements</button>
+        <button data-tab="journal" class="tab">Journal</button>
+      </nav>
+
+      <div id="tab-joueurs" class="tab-panel">
+        <div class="card">
+          <h2>Rechercher un joueur</h2>
+          <form id="search-form" class="row">
+            <input name="q" placeholder="Nom d'utilisateur ou identifiant" required>
+            <button type="submit">Rechercher</button>
+          </form>
+        </div>
+        <div id="player" class="card" hidden>
+          <h2 id="player-name"></h2>
+          <p class="muted" id="player-id"></p>
+          <div id="player-resources" class="chips"></div>
+          <p class="muted" id="player-bastion"></p>
+          <h3>Donner des ressources</h3>
+          <form id="grant-form">
+            <div id="grant-fields" class="grid"></div>
+            <label>Motif (obligatoire, inscrit au journal) <input name="motif" minlength="3" required placeholder="ex. compensation panne du 25/11"></label>
+            <button type="submit">Donner</button>
+          </form>
+        </div>
+      </div>
+
+      <div id="tab-evenements" class="tab-panel" hidden>
+        <div class="card">
+          <h2 id="event-form-title">Nouvel événement</h2>
+          <form id="event-form">
+            <input type="hidden" name="id">
+            <label>Nom <input name="nom" maxlength="60" required placeholder="ex. Week-end de l'or"></label>
+            <div class="grid">
+              <label>Type <select name="type" required></select></label>
+              <label>Multiplicateur <input name="multiplicateur" type="number" min="1" max="5" step="0.1" value="2" required></label>
+              <label>Début <input name="debut" type="datetime-local" required></label>
+              <label>Fin <input name="fin" type="datetime-local" required></label>
+            </div>
+            <div class="row">
+              <button type="submit">Enregistrer</button>
+              <button type="button" id="event-cancel" class="ghost" hidden>Annuler la modification</button>
+            </div>
+          </form>
+        </div>
+        <div class="card">
+          <h2>Événements programmés</h2>
+          <table id="events"><thead><tr><th>Nom</th><th>Effet</th><th>Début</th><th>Fin</th><th>État</th><th></th></tr></thead><tbody></tbody></table>
+          <p id="events-empty" class="muted" hidden>Aucun événement.</p>
+        </div>
+      </div>
+
+      <div id="tab-journal" class="tab-panel" hidden>
+        <div class="card">
+          <h2>Journal des actions GM <button id="journal-refresh" class="ghost small">Actualiser</button></h2>
+          <table id="journal"><thead><tr><th>Quand</th><th>GM</th><th>Action</th><th>Détails</th></tr></thead><tbody></tbody></table>
+          <p id="journal-empty" class="muted" hidden>Aucune action pour l'instant.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>

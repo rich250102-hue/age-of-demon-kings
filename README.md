@@ -15,6 +15,7 @@ Statut : **prototype du mois 1**. Formes provisoires (low-poly), pas encore d'ar
 - Une forêt avec 3 camps de monstres et un gardien. Battre le gardien libère la forêt.
 - Un bastion 12 x 12 : tours, murs et pièges, puis un raid simulé en 3 vagues avec butin ou pertes plafonnées.
 - Un serveur Nakama qui fait autorité : compte par appareil, butin des monstres, bastion et issue des raids, plus une première commande Game Master.
+- Un panel Game Master web (`gm-panel/`) : joueurs, dons tracés, événements appliqués sans mise à jour du jeu, journal.
 - Le jeu fonctionne hors ligne par défaut, et en ligne dès qu'une adresse de serveur est donnée.
 
 ## Arborescence
@@ -25,6 +26,7 @@ client/          Projet Godot 4.7 (GDScript typé)
   src/           core, gameplay, bastion, world, ui
   tests/         Tests unitaires, test de fumée, captures
 server/nakama/   Module serveur TypeScript, docker-compose, script de vérification
+gm-panel/        Panel Game Master web (voir gm-panel/README.md)
 docs/            Architecture et captures
 ```
 
@@ -54,7 +56,7 @@ godot --headless --path . --script res://tests/smoke.gd       # partie complète
 ```
 cd server/nakama/modules
 npm install
-npm test                                                  # compile le module puis 17 tests
+npm test                                                  # compile le module puis 21 tests
 ```
 
 ## Lancer le serveur en local

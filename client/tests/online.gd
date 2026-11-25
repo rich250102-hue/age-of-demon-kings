@@ -37,9 +37,16 @@ func _run() -> void:
 	res = await profile.place_building("mur", Vector2i(0, 0))
 	_expect(not res.ok and res.error == "case_interdite", "le serveur refuse une case du bord")
 
+	# Un événement « or des monstres » créé depuis le panel GM multiplie le butin.
+	var mult := 1.0
+	for e in await profile.fetch_active_events():
+		if e.type == "bonus_or_chasse":
+			mult *= float(e.multiplicateur)
+	mult = minf(mult, 5.0)
 	var before_loot: int = profile.get_amount("or")
 	res = await profile.loot_monster("diablotin", 0.0)
-	_expect(res.ok and res.gold >= 3 and res.gold <= 6, "butin tiré par le serveur (%d)" % int(res.get("gold", -1)))
+	var g := int(res.get("gold", -1))
+	_expect(res.ok and g >= int(3 * mult) and g <= int(6 * mult), "butin tiré par le serveur (%d, bonus ×%s)" % [g, str(mult)])
 	_expect(profile.get_amount("or") == before_loot + int(res.gold), "or mis à jour depuis le serveur")
 
 	res = await profile.launch_raid("raid_1")
@@ -55,6 +62,9 @@ func _run() -> void:
 		same = same and int(fresh.profil.resources[k]) == profile.get_amount(k)
 	_expect(same, "ressources identiques client / serveur %s / %s" % [fresh.profil.resources, profile.wallet.to_dict()])
 	_expect(fresh.profil.bastion.size() == profile.bastion_layout.size(), "bastion identique client / serveur")
+
+	var events: Array = await profile.fetch_active_events()
+	_expect(events is Array, "lecture des événements en cours (%d)" % events.size())
 
 	await profile.remove_building(cell)
 	_finish()

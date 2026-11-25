@@ -69,6 +69,14 @@ func connect_to_server(url: String) -> Dictionary:
 	return res
 
 
+## Événements en cours, créés depuis le panel Game Master (vide hors ligne).
+func fetch_active_events() -> Array:
+	if not is_online():
+		return []
+	var res := await client.call_rpc("evenements_actifs")
+	return res.get("evenements", []) if res.get("ok", false) else []
+
+
 func _device_id() -> String:
 	if FileAccess.file_exists(DEVICE_ID_PATH):
 		var saved := FileAccess.get_file_as_string(DEVICE_ID_PATH).strip_edges()
