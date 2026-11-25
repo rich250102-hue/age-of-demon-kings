@@ -1,0 +1,28 @@
+# Serveur de développement local : PostgreSQL + Nakama avec le module AODK.
+# Lancer : (cd modules && npm install && npm run build) puis `docker compose up`.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: nakama
+      POSTGRES_PASSWORD: localdev
+    volumes: [ "pgdata:/var/lib/postgresql/data" ]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 3s
+      retries: 10
+  nakama:
+    image: registry.heroiclabs.com/heroiclabs/nakama:3.35.0
+    depends_on:
+      postgres: { condition: service_healthy }
+    entrypoint:
+      - /bin/sh
+      - -ecx
+      - >
+        /nakama/nakama migrate up --database.address postgres:localdev@postgres:5432/nakama &&
+        exec /nakama/nakama --name aodk1 --database.address postgres:localdev@postgres:5432/nakama
+        --runtime.js_entrypoint index.js --logger.level INFO
+    volumes: [ "./modules/build:/nakama/data/modules" ]
+    ports: [ "7350:7350", "7351:7351" ]
+volumes:
+  pgdata:
