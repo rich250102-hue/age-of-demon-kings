@@ -1,0 +1,7 @@
+{
+  "raid_1": { "name": "Raid des diablotins", "core_hp": 500, "waves": [
+    { "tick": 0,  "count": 4, "hp": 40, "damage": 5, "speed_ticks": 3 },
+    { "tick": 40, "count": 6, "hp": 40, "damage": 5, "speed_ticks": 3 },
+    { "tick": 90, "count": 3, "hp": 120, "damage": 12, "speed_ticks": 4 }
+  ], "loot_on_win": { "or": 60, "bois": 30, "pierre": 30 }, "max_loss_ratio": 0.2 }
+}

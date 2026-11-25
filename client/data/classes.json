@@ -1,0 +1,11 @@
+{
+  "lame": {
+    "name": "Lame",
+    "role": "Mêlée, encaisse les coups",
+    "base_stats": { "force": 8, "agilite": 5, "vigueur": 8, "esprit": 2, "precision": 5 },
+    "attack_range": 2.2,
+    "attack_interval": 1.0,
+    "move_speed": 6.0,
+    "skills": ["frappe", "tourbillon", "charge", "cri_de_guerre", "colere"]
+  }
+}

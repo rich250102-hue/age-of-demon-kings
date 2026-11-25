@@ -1,0 +1,10 @@
+# Godot
+client/.godot/
+client/export/
+*.import
+# Node
+server/nakama/modules/node_modules/
+server/nakama/modules/build/
+# OS
+.DS_Store
+Thumbs.db

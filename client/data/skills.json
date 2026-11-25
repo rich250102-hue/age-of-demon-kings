@@ -1,0 +1,7 @@
+{
+  "frappe":        { "name": "Frappe",        "slot": 1, "kind": "single", "range": 2.6, "radius": 0.0, "power": 1.5, "cooldown": 3.0 },
+  "tourbillon":    { "name": "Tourbillon",    "slot": 2, "kind": "area_self", "range": 0.0, "radius": 3.5, "power": 0.8, "cooldown": 6.0 },
+  "charge":        { "name": "Charge",        "slot": 3, "kind": "dash", "range": 8.0, "radius": 0.0, "power": 1.0, "cooldown": 8.0 },
+  "cri_de_guerre": { "name": "Cri de guerre", "slot": 4, "kind": "buff", "range": 0.0, "radius": 0.0, "power": 0.3, "cooldown": 15.0, "duration": 6.0 },
+  "colere":        { "name": "Colère",        "slot": 5, "kind": "area_self", "range": 0.0, "radius": 5.0, "power": 3.0, "cooldown": 40.0 }
+}
