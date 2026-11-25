@@ -99,13 +99,14 @@ const HUNT_WINDOW_MS = 60000;
 
 // Butin d'un monstre vaincu. Le combat se joue encore sur le client : le serveur borne donc
 // le gain (montant tiré par lui, nombre de victoires par minute plafonné par type).
-function lootMonster(state: PlayerState, defs: { [id: string]: MonsterDef }, monster: string, nowMs: number, roll: number): Result & { gold?: number } {
+function lootMonster(state: PlayerState, defs: { [id: string]: MonsterDef }, monster: string, nowMs: number, roll: number, multiplier?: number): Result & { gold?: number } {
   const def = defs[monster];
   if (!def) return { ok: false, error: "monstre_inconnu" };
   const recent = ((state.chasse || {})[monster] || []).filter(function (t) { return nowMs - t < HUNT_WINDOW_MS; });
   if (recent.length >= def.max_kills_per_minute) return { ok: false, error: "butin_trop_rapide" };
   const low = def.gold[0], high = def.gold[1];
-  const gold = low + Math.floor(Math.min(Math.max(roll, 0), 0.9999) * (high - low + 1));
+  const base = low + Math.floor(Math.min(Math.max(roll, 0), 0.9999) * (high - low + 1));
+  const gold = Math.floor(base * (multiplier || 1));
   const chasse: { [m: string]: number[] } = {};
   for (const k in state.chasse || {}) chasse[k] = (state.chasse as any)[k];
   chasse[monster] = recent.concat([nowMs]);

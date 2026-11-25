@@ -14,6 +14,9 @@ func _ready() -> void:
 		var res: Dictionary = await Profile.connect_to_server(url)
 		if res.get("ok", false):
 			EventBus.message.emit("Connecté au serveur")
+			var events: Array = await Profile.fetch_active_events()
+			for e in events:
+				EventBus.message.emit("Événement : %s (%s ×%s)" % [e.nom, e.description, str(e.multiplicateur)])
 		else:
 			EventBus.message.emit("Serveur injoignable : partie hors ligne (%s)" % Profile.error_text(String(res.get("error", ""))))
 

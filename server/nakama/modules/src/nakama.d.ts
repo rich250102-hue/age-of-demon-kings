@@ -5,11 +5,14 @@ declare namespace nkruntime {
   interface StorageReadRequest { collection: string; key: string; userId: string; }
   interface StorageObject { collection: string; key: string; userId: string; value: any; version: string; }
   interface StorageWriteRequest { collection: string; key: string; userId: string; value: any; version?: string; permissionRead?: number; permissionWrite?: number; }
-  interface Account { user: { id: string; metadata: { [key: string]: any } }; }
+  interface User { userId: string; username: string; displayName?: string; metadata: { [key: string]: any }; createTime?: number; }
+  interface Account { user: User; }
   interface Nakama {
     storageRead(reads: StorageReadRequest[]): StorageObject[];
     storageWrite(writes: StorageWriteRequest[]): any[];
     accountGetId(userId: string): Account;
+    usersGetId(userIds: string[]): User[];
+    usersGetUsername(usernames: string[]): User[];
   }
   interface Initializer { registerRpc(id: string, fn: RpcFunction): void; }
   type RpcFunction = (ctx: Context, logger: Logger, nk: Nakama, payload: string) => string;
