@@ -9,6 +9,13 @@ var _current: Node
 
 func _ready() -> void:
 	show_forest()
+	var url := Profile.configured_server_url()
+	if url != "":
+		var res: Dictionary = await Profile.connect_to_server(url)
+		if res.get("ok", false):
+			EventBus.message.emit("Connecté au serveur")
+		else:
+			EventBus.message.emit("Serveur injoignable : partie hors ligne (%s)" % Profile.error_text(String(res.get("error", ""))))
 
 
 func show_forest() -> void:

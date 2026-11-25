@@ -4,7 +4,9 @@
 interface BuildingDef { name: string; cost: { [res: string]: number }; hp: number; damage: number; range: number; fire_interval: number; blocks: boolean; }
 interface Resources { [res: string]: number; }
 interface PlacedBuilding { id: string; x: number; y: number; }
-interface PlayerState { resources: Resources; bastion: PlacedBuilding[]; }
+interface MonsterDef { name: string; gold: number[]; max_kills_per_minute: number; [extra: string]: any; }
+// chasse : horodatages (ms) des dernières victoires par type de monstre, pour plafonner le butin.
+interface PlayerState { resources: Resources; bastion: PlacedBuilding[]; chasse?: { [monster: string]: number[] }; }
 
 const GRID_SIZE = 12;
 const REFUND_RATIO = 0.5;
@@ -71,7 +73,7 @@ function placeBuilding(state: PlayerState, defs: { [id: string]: BuildingDef }, 
   if (!canPlace(state.bastion, x, y)) return { ok: false, error: "case_interdite" };
   const resources = spend(state.resources, def.cost);
   if (!resources) return { ok: false, error: "ressources_insuffisantes" };
-  return { ok: true, state: { resources: resources, bastion: state.bastion.concat([{ id: id, x: x, y: y }]) } };
+  return { ok: true, state: { resources: resources, bastion: state.bastion.concat([{ id: id, x: x, y: y }]), chasse: state.chasse } };
 }
 
 function removeBuilding(state: PlayerState, defs: { [id: string]: BuildingDef }, x: number, y: number): Result {
@@ -83,7 +85,7 @@ function removeBuilding(state: PlayerState, defs: { [id: string]: BuildingDef },
   const refund: Resources = {};
   for (const k in cost) refund[k] = Math.floor(cost[k] * REFUND_RATIO);
   const bastion = state.bastion.filter(function (_b, i) { return i !== found; });
-  return { ok: true, state: { resources: addResources(state.resources, refund), bastion: bastion } };
+  return { ok: true, state: { resources: addResources(state.resources, refund), bastion: bastion, chasse: state.chasse } };
 }
 
 function validateGrant(gain: Resources): string | null {
@@ -91,4 +93,21 @@ function validateGrant(gain: Resources): string | null {
     if (typeof gain[k] !== "number" || gain[k] < 0 || gain[k] > GM_MAX_GRANT) return "montant_invalide";
   }
   return null;
+}
+
+const HUNT_WINDOW_MS = 60000;
+
+// Butin d'un monstre vaincu. Le combat se joue encore sur le client : le serveur borne donc
+// le gain (montant tiré par lui, nombre de victoires par minute plafonné par type).
+function lootMonster(state: PlayerState, defs: { [id: string]: MonsterDef }, monster: string, nowMs: number, roll: number): Result & { gold?: number } {
+  const def = defs[monster];
+  if (!def) return { ok: false, error: "monstre_inconnu" };
+  const recent = ((state.chasse || {})[monster] || []).filter(function (t) { return nowMs - t < HUNT_WINDOW_MS; });
+  if (recent.length >= def.max_kills_per_minute) return { ok: false, error: "butin_trop_rapide" };
+  const low = def.gold[0], high = def.gold[1];
+  const gold = low + Math.floor(Math.min(Math.max(roll, 0), 0.9999) * (high - low + 1));
+  const chasse: { [m: string]: number[] } = {};
+  for (const k in state.chasse || {}) chasse[k] = (state.chasse as any)[k];
+  chasse[monster] = recent.concat([nowMs]);
+  return { ok: true, gold: gold, state: { resources: addResources(state.resources, { or: gold }), bastion: state.bastion, chasse: chasse } };
 }

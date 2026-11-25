@@ -29,13 +29,20 @@ Module TypeScript compilé en un seul fichier ES5 (`build/index.js`).
 | `sante` | Vérifie que le serveur répond |
 | `profil_lire` | Crée ou lit l'état du joueur |
 | `bastion_placer` / `bastion_retirer` | Construction vérifiée (case, coût), remboursement de 50 % |
+| `butin_monstre` | Or d'un monstre vaincu : montant tiré par le serveur, victoires par minute plafonnées par type (`max_kills_per_minute`) |
+| `raid_lancer` | Le serveur choisit la graine, simule le raid, applique butin ou pillage ; le client rejoue la même graine pour l'afficher |
 | `gm_donner` | Game Master : don de ressources, rôle `gm` ou `admin` exigé, motif obligatoire, journalisé |
 
 Vérifié le 25/11/2026 sur un vrai Nakama 3.35 + PostgreSQL 16 : authentification appareil et RPC appelées en HTTP.
 
+## Client et serveur
+
+- `Profile` (autoload) porte toutes les actions qui modifient le joueur : `place_building`, `remove_building`, `loot_monster`, `launch_raid`. Hors ligne, les règles tournent localement ; en ligne, chaque action passe par une RPC et le client n'applique que la réponse du serveur.
+- `NakamaClient` : client HTTP minimal (authentification appareil + RPC), sans extension externe.
+- Raid identique des deux côtés : générateur `DetRng` (xorshift32) et distances entières, portés à l'identique en GDScript et en TypeScript. Des valeurs de référence communes sont vérifiées par les deux suites de tests.
+- Limite assumée : le combat en forêt se joue encore sur le client. Le serveur borne le butin, mais ne vérifie pas encore le combat lui-même.
+
 ## Prochaines étapes techniques
 
-- Brancher le client sur le serveur (client Nakama pour Godot).
-- Rejouer les raids côté serveur avec `RaidSim` porté en TypeScript.
 - Panel Game Master web (événements pilotés par les données).
 - Test sur un vrai téléphone Android d'entrée de gamme.

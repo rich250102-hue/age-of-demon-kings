@@ -14,7 +14,8 @@ Statut : **prototype du mois 1**. Formes provisoires (low-poly), pas encore d'ar
 - Un héros (classe Lame) : déplacement au joystick tactile ou au clavier, attaque automatique, 5 compétences.
 - Une forêt avec 3 camps de monstres et un gardien. Battre le gardien libère la forêt.
 - Un bastion 12 x 12 : tours, murs et pièges, puis un raid simulé en 3 vagues avec butin ou pertes plafonnées.
-- Un serveur Nakama qui fait autorité sur les ressources et le bastion, plus une première commande Game Master.
+- Un serveur Nakama qui fait autorité : compte par appareil, butin des monstres, bastion et issue des raids, plus une première commande Game Master.
+- Le jeu fonctionne hors ligne par défaut, et en ligne dès qu'une adresse de serveur est donnée.
 
 ## Arborescence
 
@@ -46,14 +47,14 @@ Contrôles PC : ZQSD ou WASD pour bouger, clic gauche pour viser ou attaquer, to
 ```
 cd client
 godot --headless --path . --import                       # une fois
-godot --headless --path . --script res://tests/run_tests.gd   # 18 tests unitaires
+godot --headless --path . --script res://tests/run_tests.gd   # 20 tests unitaires
 godot --headless --path . --script res://tests/smoke.gd       # partie complète automatisée
 ```
 
 ```
 cd server/nakama/modules
 npm install
-npm test                                                  # compile le module puis 8 tests
+npm test                                                  # compile le module puis 17 tests
 ```
 
 ## Lancer le serveur en local
@@ -62,6 +63,16 @@ npm test                                                  # compile le module pu
 cd server/nakama/modules && npm install && npm run build && cd ..
 docker compose up
 ./smoke_rpc.sh                                            # dans un autre terminal
+```
+
+Jouer en ligne avec ce serveur : lancer le jeu avec l'argument `-- --serveur=http://127.0.0.1:7350`
+(dans Godot : Projet > Paramètres du projet > Aodk > Serveur Url). Sans adresse, le jeu reste hors ligne.
+
+Test d'intégration client + serveur (serveur lancé) :
+
+```
+cd client
+godot --headless --path . --script res://tests/online.gd -- --serveur=http://127.0.0.1:7350
 ```
 
 Console d'administration Nakama : http://127.0.0.1:7351 (identifiants par défaut admin / password, à changer avant toute mise en ligne).

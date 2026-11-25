@@ -49,7 +49,7 @@ function setup() {
 
 test("enregistre les RPC attendues", () => {
   const { rpcs } = setup();
-  assert.deepStrictEqual(Object.keys(rpcs).sort(), ["bastion_placer", "bastion_retirer", "gm_donner", "profil_lire", "sante"]);
+  assert.deepStrictEqual(Object.keys(rpcs).sort(), ["bastion_placer", "bastion_retirer", "butin_monstre", "gm_donner", "profil_lire", "raid_lancer", "sante"]);
 });
 
 test("nouveau joueur : ressources de départ", () => {
@@ -111,4 +111,24 @@ test("non connecté : refusé", () => {
 test("requête mal formée : refusée", () => {
   const { rpcs, nk } = setup();
   assert.throws(() => rpcs.bastion_placer({ userId: "p1" }, logger, nk, "{oops"), /requete_invalide/);
+});
+
+test("raid_lancer : le serveur décide et applique butin ou pillage", () => {
+  const { call } = setup();
+  call("p1", "profil_lire");
+  const r = call("p1", "raid_lancer", { raid: "raid_1" });
+  assert.strictEqual(r.ok, true);
+  assert.ok(r.graine > 0);
+  assert.strictEqual(r.victoire, false); // bastion vide : le cœur tombe
+  assert.strictEqual(r.profil.resources.or, 80);
+  assert.strictEqual(r.perte.or, 20);
+  assert.strictEqual(call("p1", "raid_lancer", { raid: "x" }).error, "raid_inconnu");
+});
+
+test("butin_monstre : gain borné, historique de chasse non exposé", () => {
+  const { call } = setup();
+  const r = call("p1", "butin_monstre", { monstre: "diablotin" });
+  assert.ok(r.ok && r.or >= 3 && r.or <= 6);
+  assert.strictEqual(r.profil.resources.or, 100 + r.or);
+  assert.strictEqual(r.profil.chasse, undefined);
 });

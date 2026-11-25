@@ -41,6 +41,8 @@ func _ready() -> void:
 	hud.skill_pressed.connect(hero.use_skill)
 	hud.navigate_pressed.connect(func(): navigate.emit("bastion"))
 	EventBus.monster_killed.connect(_on_monster_killed)
+	EventBus.loot_received.connect(func(_id: String, gold: int): hud.show_message("+%d or" % gold))
+	EventBus.loot_refused.connect(hud.show_message)
 	_update_status()
 	EventBus.hero_health_changed.emit(hero.hp, int(hero.stats.max_hp))
 
@@ -102,8 +104,7 @@ func _spawn_monsters() -> void:
 			monsters.append(m)
 
 
-func _on_monster_killed(id: String, gold: int) -> void:
-	hud.show_message("+%d or" % gold)
+func _on_monster_killed(id: String) -> void:
 	if liberated:
 		return
 	if GameData.monsters.get(id, {}).get("boss", false):
