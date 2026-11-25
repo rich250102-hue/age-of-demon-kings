@@ -15,13 +15,18 @@ var _skill_buttons: Array[Button] = []
 var _skill_names: Array[String] = []
 var _cooldown_end: Array[float] = []
 var _message_tween: Tween
+## Racine des contrôles de l'interface : y ajouter les barres propres à chaque écran pour hériter du thème.
+var ui_root: Control
 
 
 func setup(skills: Array[Dictionary], nav_label: String, show_health := true) -> void:
 	var root := Control.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Un CanvasLayer coupe l'héritage du thème de la fenêtre : on le pose ici.
+	root.theme = UiTheme.build()
 	add_child(root)
+	ui_root = root
 
 	var top := HBoxContainer.new()
 	top.position = Vector2(16, 12)
@@ -107,7 +112,8 @@ func _process(_delta: float) -> void:
 	for i in _skill_buttons.size():
 		var left := _cooldown_end[i] - now
 		_skill_buttons[i].text = "%s\n%.0f s" % [_skill_names[i], ceilf(left)] if left > 0.0 else _skill_names[i]
-		_skill_buttons[i].modulate = Color(1, 1, 1, 0.5) if left > 0.0 else Color.WHITE
+		# Bouton grisé mais opaque pendant la recharge : le décor ne doit pas transparaître.
+		_skill_buttons[i].self_modulate = Color(0.55, 0.55, 0.6) if left > 0.0 else Color.WHITE
 
 
 func _build_skill_bar(root: Control, skills: Array[Dictionary]) -> void:

@@ -11,7 +11,7 @@ const DIRS: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), 
 var grid: BastionGrid
 var raid: Dictionary
 var building_defs: Dictionary
-var rng := RandomNumberGenerator.new()
+var rng: DetRng
 
 var tick := 0
 var core_hp := 0
@@ -30,7 +30,7 @@ func _init(p_grid: BastionGrid, p_raid: Dictionary, p_building_defs: Dictionary,
 	grid = p_grid
 	raid = p_raid
 	building_defs = p_building_defs
-	rng.seed = seed_value
+	rng = DetRng.new(seed_value)
 	core_hp = int(raid.get("core_hp", 500))
 	for b in grid.buildings():
 		var def: Dictionary = building_defs.get(b.id, {})
@@ -85,8 +85,8 @@ func _compute_distance_field() -> void:
 
 
 func _edge_cell() -> Vector2i:
-	var side := rng.randi_range(0, 3)
-	var pos := rng.randi_range(0, grid.size - 1)
+	var side := rng.range_int(0, 3)
+	var pos := rng.range_int(0, grid.size - 1)
 	match side:
 		0: return Vector2i(pos, 0)
 		1: return Vector2i(pos, grid.size - 1)
@@ -170,15 +170,18 @@ func _next_cell(cell: Vector2i) -> Vector2i:
 
 
 func _nearest_enemy(cell: Vector2i, max_range: float) -> Dictionary:
+	# Distances au carré en entiers : résultat exact, identique côté serveur.
 	var best: Dictionary = {}
-	var best_dist := INF
+	var best_d2 := -1
+	var range2 := max_range * max_range
 	for e in enemies:
 		if not e.alive:
 			continue
-		var dist := Vector2(cell).distance_to(Vector2(e.cell))
-		if dist <= max_range and (dist < best_dist or (is_equal_approx(dist, best_dist) and int(e.id) < int(best.get("id", 0)))):
+		var delta: Vector2i = e.cell - cell
+		var d2 := delta.x * delta.x + delta.y * delta.y
+		if d2 <= range2 and (best_d2 < 0 or d2 < best_d2 or (d2 == best_d2 and int(e.id) < int(best.id))):
 			best = e
-			best_dist = dist
+			best_d2 = d2
 	return best
 
 

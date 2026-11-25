@@ -5,7 +5,7 @@ signal navigate(target: String)
 
 const CELL := 2.0
 const STEP_SECONDS := RaidSim.TICK_SECONDS
-const REFUND_RATIO := 0.5
+const RAID_ID := "raid_1"
 
 var grid: BastionGrid
 var rig := CameraRig.new()
@@ -20,6 +20,8 @@ var _sim_accumulator := 0.0
 var _core_label: Label3D
 var _mode_buttons: Dictionary = {}
 var _raid_button: Button
+var _raid_result: Dictionary = {}
+var _busy := false
 
 
 func _ready() -> void:
@@ -76,56 +78,71 @@ func cell_to_world(cell: Vector2i) -> Vector3:
 
 
 func _on_cell_tapped(cell: Vector2i) -> void:
-	if not grid.in_bounds(cell):
+	if not grid.in_bounds(cell) or _busy:
 		return
+	_busy = true  # une seule demande à la fois (le serveur peut mettre un instant à répondre)
 	if removing:
-		var id := grid.remove(cell)
-		if id != "":
-			var refund := {}
-			var cost: Dictionary = GameData.buildings.get(id, {}).get("cost", {})
-			for k in cost:
-				refund[k] = int(floor(int(cost[k]) * REFUND_RATIO))
-			Profile.add(refund)
-			_building_nodes[cell].queue_free()
-			_building_nodes.erase(cell)
-			_save()
+		if grid.building_at(cell) != "" and grid.building_at(cell) != BastionGrid.CORE_ID:
+			var res: Dictionary = await Profile.remove_building(cell)
+			if res.ok:
+				grid.remove(cell)
+				_building_nodes[cell].queue_free()
+				_building_nodes.erase(cell)
+			else:
+				hud.show_message(Profile.error_text(res.error))
+		_busy = false
 		return
 	if not grid.can_place(cell):
-		hud.show_message("Impossible de construire ici")
+		hud.show_message(Profile.error_text("case_interdite"))
+		_busy = false
 		return
-	var def: Dictionary = GameData.buildings.get(selected_building, {})
-	if not Profile.try_spend(def.get("cost", {})):
-		hud.show_message("Ressources insuffisantes : %s" % _cost_text(def.get("cost", {})))
-		return
-	grid.place(selected_building, cell)
-	_spawn_building_node(selected_building, cell)
-	_save()
+	var building := selected_building
+	var res: Dictionary = await Profile.place_building(building, cell)
+	if res.ok:
+		grid.place(building, cell)
+		_spawn_building_node(building, cell)
+	elif res.error == "ressources_insuffisantes":
+		hud.show_message("Ressources insuffisantes : %s" % _cost_text(GameData.buildings.get(building, {}).get("cost", {})))
+	else:
+		hud.show_message(Profile.error_text(res.error))
+	_busy = false
 
 
 func _start_raid() -> void:
-	if _sim != null:
+	if _sim != null or _busy:
 		return
-	_sim = RaidSim.new(grid, GameData.raids.raid_1, GameData.buildings, int(Time.get_unix_time_from_system()))
-	_sim_accumulator = 0.0
+	_busy = true
 	_raid_button.disabled = true
-	hud.set_status("Raid en cours : %s" % String(GameData.raids.raid_1.name))
+	var res: Dictionary = await Profile.launch_raid(RAID_ID)
+	_busy = false
+	if not res.get("ok", false):
+		_raid_button.disabled = false
+		hud.show_message(Profile.error_text(String(res.get("error", ""))))
+		return
+	# On rejoue exactement le raid décidé (par le serveur en ligne), avec la même graine.
+	_raid_result = res
+	_sim = RaidSim.new(grid, GameData.raids[RAID_ID], GameData.buildings, int(res.seed))
+	_sim_accumulator = 0.0
+	hud.set_status("Raid en cours : %s" % String(GameData.raids[RAID_ID].name))
 
 
 func _finish_raid() -> void:
-	var raid: Dictionary = GameData.raids.raid_1
-	if _sim.victory:
-		Profile.add(raid.get("loot_on_win", {}))
-		hud.show_message("Victoire ! Butin : %s" % _cost_text(raid.get("loot_on_win", {})))
+	if _sim.victory != bool(_raid_result.victory):
+		push_error("Le raid affiché diverge du résultat officiel (graine %d)" % int(_raid_result.seed))
+	Profile.apply_raid(_raid_result)
+	if _raid_result.victory:
+		hud.show_message("Victoire ! Butin : %s" % _cost_text(_raid_result.loot))
 	else:
-		var lost := Profile.wallet.lose_ratio(float(raid.get("max_loss_ratio", 0.2)))
-		Profile.add({})
+		var lost: Dictionary = _raid_result.lost
 		hud.show_message("Défaite. Pillé : %s" % (_cost_text(lost) if not lost.is_empty() else "rien"))
 	for id in _enemy_nodes:
 		_enemy_nodes[id].queue_free()
 	_enemy_nodes.clear()
+	# Le bastion réel est celui du profil : les défenses détruites pendant le raid reviennent.
 	for cell in _building_nodes:
 		_building_nodes[cell].visible = true
 	_sim = null
+	_raid_result = {}
 	_raid_button.disabled = false
 	_core_label.text = "Cœur"
 	hud.set_status("Bastion : placez vos défenses, puis lancez le raid")
@@ -214,7 +231,7 @@ func _build_toolbar() -> void:
 	bar.offset_bottom = -20
 	bar.alignment = BoxContainer.ALIGNMENT_CENTER
 	bar.add_theme_constant_override("separation", 10)
-	hud.add_child(bar)
+	hud.ui_root.add_child(bar)
 	for id in GameData.buildings:
 		var def: Dictionary = GameData.buildings[id]
 		var b := Button.new()
@@ -248,11 +265,6 @@ func _select_mode(mode: String) -> void:
 		selected_building = mode
 	for id in _mode_buttons:
 		_mode_buttons[id].button_pressed = id == mode
-
-
-func _save() -> void:
-	Profile.bastion_layout = grid.to_layout()
-	Profile.save_profile()
 
 
 static func _cost_text(cost: Dictionary) -> String:

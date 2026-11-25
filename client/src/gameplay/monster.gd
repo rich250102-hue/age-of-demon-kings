@@ -77,9 +77,8 @@ func take_damage(amount: int, crit: bool) -> void:
 
 
 func _die() -> void:
-	var gold := CombatRules.roll_gold(def.get("gold", [0, 0]), rng.randf())
-	Profile.add({"or": gold})
-	EventBus.monster_killed.emit(monster_id, gold)
+	EventBus.monster_killed.emit(monster_id)
+	_claim_loot()
 	visible = false
 	var respawn := float(def.get("respawn", 10.0))
 	_respawn_timer = respawn if respawn > 0.0 else -1.0
@@ -158,3 +157,12 @@ func _lunge() -> void:
 	var tween := create_tween()
 	tween.tween_property(_body, "scale", Vector3(1.15, 0.9, 1.15), 0.08)
 	tween.tween_property(_body, "scale", Vector3.ONE, 0.12)
+
+
+## Le butin est demandé au profil (au serveur en ligne) ; le combat continue sans l'attendre.
+func _claim_loot() -> void:
+	var res: Dictionary = await Profile.loot_monster(monster_id, rng.randf())
+	if res.get("ok", false):
+		EventBus.loot_received.emit(monster_id, int(res.get("gold", 0)))
+	else:
+		EventBus.loot_refused.emit(Profile.error_text(String(res.get("error", ""))))

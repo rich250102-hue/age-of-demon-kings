@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "lib": ["es2017"],
+    "module": "none",
+    "outFile": "./build/index.js",
+    "strict": true,
+    "noImplicitReturns": true,
+    "removeComments": false
+  },
+  "include": ["src/**/*.ts"]
+}
