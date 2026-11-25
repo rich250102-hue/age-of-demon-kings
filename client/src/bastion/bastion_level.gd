@@ -214,7 +214,7 @@ func _build_toolbar() -> void:
 	bar.offset_bottom = -20
 	bar.alignment = BoxContainer.ALIGNMENT_CENTER
 	bar.add_theme_constant_override("separation", 10)
-	hud.add_child(bar)
+	hud.ui_root.add_child(bar)
 	for id in GameData.buildings:
 		var def: Dictionary = GameData.buildings[id]
 		var b := Button.new()
